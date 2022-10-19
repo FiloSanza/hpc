@@ -414,7 +414,7 @@ void cat_map( PGM_image* img, int k )
             next[xcur + ycur*N] = cur[x + y*N];
         }
     }
-
+    
     img->bmap = next;
     free(cur);
 }

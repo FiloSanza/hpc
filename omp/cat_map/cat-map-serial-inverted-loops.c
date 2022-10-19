@@ -415,7 +415,7 @@ void cat_map( PGM_image* img, int k )
     }
     
     img->bmap = next;
-    free(next);
+    free(cur);
 }
 
 
