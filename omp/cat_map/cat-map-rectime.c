@@ -64,6 +64,22 @@ int lcm(int a, int b)
     return (a / gcd(a, b))*b;
 }
 
+int rec_time_for_pixel(const int orig_x, const int orig_y, const int n) {
+    int x = orig_x;
+    int y = orig_y;
+    int rectime = 0;
+
+    do {
+        const int old_x = x;
+        const int old_y = y;
+        x = (2 * old_x + old_y) % n;
+        y = (old_x + old_y) % n;
+        rectime++;
+    } while (x != orig_x || y != orig_y);
+
+    return rectime;
+}
+
 /**
  * Compute the recurrence time of Arnold's cat map applied to an image
  * of size (n*n). The idea is the following. Each point (x,y) requires
@@ -74,9 +90,29 @@ int lcm(int a, int b)
  */
 int cat_map_rectime( int n )
 {
-    /* [TODO] Implement this function; start with a working serial
-       version, then parallelize. */
-    return 0;
+    const int num_threads = omp_get_max_threads();
+    int rectime[num_threads];
+
+    for (int i=0; i<num_threads; i++) {
+        rectime[i] = 1;
+    }
+
+#pragma omp parallel for collapse(2) num_threads(num_threads) default(none) shared(n, rectime) schedule(dynamic)
+    for (int x=0; x<n; x++) {
+        for (int y=0; y<n; y++) {
+            const int my_id = omp_get_thread_num();
+            const int point_rectime = rec_time_for_pixel(x, y, n);
+            rectime[my_id] = lcm(rectime[my_id], point_rectime);
+        }
+    }
+
+    int final_rec_time = 1;
+
+    for (int i=0; i<num_threads; i++) {
+        final_rec_time = lcm(final_rec_time, rectime[i]);
+    }
+
+    return final_rec_time;
 }
 
 int main( int argc, char* argv[] )
