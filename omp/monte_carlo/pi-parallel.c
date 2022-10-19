@@ -99,9 +99,10 @@ OpenMP threads and $N=20000$ points:
    centered ad the origin with radius 1. */
 unsigned int generate_points( unsigned int n )
 {
-    unsigned int inside[n];
-    memset(inside, 0, sizeof(int) * n);
-#pragma omp parallel default(none) shared(n, inside)
+    const int num_threads = omp_get_max_threads();
+    unsigned int inside[num_threads];
+    memset(inside, 0, sizeof(int) * num_threads);
+#pragma omp parallel default(none) shared(n, inside), num_threads(num_threads)
     {
         /* The C function rand() is _NOT_ thread-safe, since it uses a
         global (shared) seed. Therefore, it can not be used inside an
@@ -120,12 +121,12 @@ unsigned int generate_points( unsigned int n )
             /* Generate two random values in the range [-1, 1] */
             const double x = (2.0 * rand_r(&my_seed)/(double)RAND_MAX) - 1.0;
             const double y = (2.0 * rand_r(&my_seed)/(double)RAND_MAX) - 1.0;
-            inside[i] = x*x + y*y <= 1.0;
+            inside[my_id] += x*x + y*y <= 1.0;
         }
     }
 
     unsigned int total_inside = 0;
-    for (unsigned int i=0; i<n; i++) {
+    for (unsigned int i=0; i<num_threads; i++) {
         total_inside += inside[i];
     }
 
