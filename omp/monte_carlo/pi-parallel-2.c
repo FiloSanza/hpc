@@ -141,9 +141,9 @@ int main( int argc, char *argv[] )
 #pragma omp parallel num_threads(num_threads) default(none) shared(n_points, num_threads, n_inside)
     {
         const int my_id = omp_get_thread_num();
-        const int my_points = n_points / num_threads;
+        const int my_points = (n_points * (my_id + 1) / num_threads) + (n_points * my_id)/num_threads;
         const unsigned int my_inside = generate_points(my_points);
-        
+
         n_inside[my_id] = my_inside;
     }
 

@@ -168,8 +168,7 @@ long mark( char *isprime, long from, long to, long p )
         long lower_bound = from + (n * my_id) / num_threads;
         // Smallest value multiple of p >= lower_bound
         lower_bound = ((lower_bound + p - 1) / p) * p;
-
-        const int upper_bound = from + (n * my_id+1) / num_threads;
+        const int upper_bound = min(from + (n * my_id+1) / num_threads, to);
 
         for ( long x=lower_bound; x<upper_bound; x+=p ) {
             if (isprime[x]) {

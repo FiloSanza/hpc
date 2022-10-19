@@ -171,8 +171,8 @@ int main( int argc, char *argv[] )
 
       const int n = MAX_KEY_VALUE - MIN_KEY_VALUE + 1;
       const int my_id = omp_get_thread_num();
-      const int lower_bound = (n * my_id) / num_thread;
-      const int upper_bound = (n * (my_id + 1)) / num_thread;
+      const int lower_bound = MIN_KEY_VALUE + (n * my_id) / num_thread;
+      const int upper_bound = min(MIN_KEY_VALUE + (n * (my_id + 1)) / num_thread, MAX_KEY_VALUE);
 
       for (int k=lower_bound; k<upper_bound && !key_found; k++) {
         snprintf(key, KEY_LEN+1, "%08d", k);
