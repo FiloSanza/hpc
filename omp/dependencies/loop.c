@@ -254,6 +254,17 @@ void test2_par(int *A, int n)
 
        preserving the correctness of the computation. Now, one of the
        loops can be parallelized (which one?) */
+
+    int i, j;
+    for (j=1; j<n; j++) {
+#pragma omp parallel for default(none) shared(A, j, n)
+        for (i=1; i<n; i++) {
+            /*
+              A[i][j] = g(A[i,j-1], A[i-1,j-1])
+             */
+            A[IDX(i,j,n)] = g(A[IDX(i,j-1,n)], A[IDX(i-1,j-1,n)]);
+        }
+    }
 }
 
 /****************************************************************************/
@@ -286,6 +297,16 @@ void test3_par(int *A, int n)
        values starting from 0. The code of test3_seq() only process
        indexes where i>0 and j>0, so you need to add an "if" statement
        to skip the case where i==0 or j==0. */
+
+    int i, j;
+    for(i=0; i<2*n; i++) {
+#pragma omp parallel for default(none) shared(A, i, n) private(j)
+        for(j=0; j<n; j++) {
+            if ((i-j) > 0 && j > 0 && j <= i) {
+                A[IDX(i-j, j, n)] = f(A[IDX(i-j, j-1, n)], A[IDX(i-j-1, j-1, n)], A[IDX(i-j-1, j, n)]);
+            }
+        }
+    }
 }
 
 /**
@@ -311,7 +332,7 @@ int array_equal(int *a, int *b, int n)
 int main( void )
 {
     const int N = 10;
-    int *a1, *b1, *c1, *a2, *b2, *c2;
+    int *a1, *b1, *c1, *a2;
 
     /* Allocate enough space for all tests */
     a1 = (int*)malloc(N*N*sizeof(int)); assert(a1 != NULL);
@@ -319,8 +340,6 @@ int main( void )
     c1 = (int*)malloc(N*sizeof(int)); assert(c1 != NULL);
 
     a2 = (int*)malloc(N*N*sizeof(int)); assert(a2 != NULL);
-    b2 = (int*)malloc(N*sizeof(int)); assert(b2 != NULL);
-    c2 = (int*)malloc(N*sizeof(int)); assert(c2 != NULL);
 
     printf("vec_shift_right_par1()\t"); fflush(stdout);
     fill(a1, N);
@@ -382,8 +401,6 @@ int main( void )
     free(b1);
     free(c1);
     free(a2);
-    free(b2);
-    free(c2);
 
     return EXIT_SUCCESS;
 }
