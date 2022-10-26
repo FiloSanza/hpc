@@ -114,22 +114,28 @@ void my_Bcast(int *v)
 
     const int left = (LEFT(my_rank) < comm_sz) ? LEFT(my_rank) : MPI_PROC_NULL;
     const int right = (RIGHT(my_rank) < comm_sz) ? RIGHT(my_rank) : MPI_PROC_NULL;
-    MPI_Send(
+    MPI_Request requests[2];
+
+    MPI_Isend(
         v,                  // Buffer
         1,                  // Count
         MPI_INT,            // Datatype
         left,               // Dest
         0,                  // Tag
-        MPI_COMM_WORLD      // Comm
+        MPI_COMM_WORLD,     // Comm
+        &requests[0]        // Request
     );
-    MPI_Send(
+    MPI_Isend(
         v,                  // Buffer
         1,                  // Count
         MPI_INT,            // Datatype
         right,               // Dest
         0,                  // Tag
-        MPI_COMM_WORLD      // Comm
+        MPI_COMM_WORLD,      // Comm
+        &requests[1]        // Request
     );
+
+    MPI_Waitall(2, requests, MPI_STATUS_IGNORE);
 }
 
 
