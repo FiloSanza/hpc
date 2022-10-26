@@ -139,6 +139,8 @@ int main( int argc, char *argv[] )
 
     my_s = sum(my_array, scatter_sz);
 
+    free(my_array);
+
     if (my_rank == 0 && (n % comm_sz != 0)) {
         my_s += sum(master_array + (scatter_sz * comm_sz), n % comm_sz);
     }
