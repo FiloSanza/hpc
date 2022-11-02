@@ -204,50 +204,28 @@ int main( int argc, char *argv[] )
         recvcount[i] = recvcount[i] * xsize * sizeof(pixel_t);
     } 
 
-    if (my_rank == 0) {
-        for (int i=0; i<comm_sz; i++) {
-            const int a = recvcount[i] / sizeof(pixel_t) / xsize;
-            const int b = displs[i] / sizeof(pixel_t) / xsize;
-            printf("%d : [%d - %d] -> [%d, %d]\n", i, b, a, displs[i], recvcount[i]);
-        } 
-    }
-
     const int lower_bound = displs[my_rank] / sizeof(pixel_t) / xsize;
     const int upper_bound = (displs[my_rank] + recvcount[my_rank]) / sizeof(pixel_t) / xsize;
 
     pixel_t* buffer = (pixel_t*)malloc(recvcount[my_rank]); assert(buffer != NULL);
-    printf("%d - START COMPUTATION [%d, %d]\n", my_rank, lower_bound, upper_bound); fflush(stdout);
     draw_lines(lower_bound, upper_bound, buffer, xsize, ysize);
-    printf("%d - END COMPUTATION [%d, %d]\n", my_rank, lower_bound, upper_bound); fflush(stdout);
 
     if ( 0 == my_rank ){
-        printf("%d - ALLOCATE BUFFER\n", my_rank); fflush(stdout);
         bitmap = (pixel_t*)malloc(xsize*ysize*sizeof(*bitmap));
         assert(bitmap != NULL);
     }
 
-    // MPI_Gatherv(
-    //     buffer,                 // Send buffer
-    //     recvcount[my_rank],     // Size
-    //     MPI_BYTE,               // Type
-    //     bitmap,                 // Recv Buffer
-    //     recvcount,              // Recvcount
-    //     displs,                 // Offsets
-    //     MPI_BYTE,               // Type
-    //     0,                      // Root
-    //     MPI_COMM_WORLD          // Comm
-    // );
-
-    // MPI_Gather(
-    //     buffer,                 // Send buffer
-    //     (ysize / comm_sz) * xsize * 3,        // Size
-    //     MPI_BYTE,               // Type
-    //     bitmap,                 // Recv Buffer
-    //     (ysize / comm_sz) * xsize * 3,              // Recvcount
-    //     MPI_BYTE,               // Type
-    //     0,                      // Root
-    //     MPI_COMM_WORLD          // Comm
-    // );
+    MPI_Gatherv(
+        buffer,                 // Send buffer
+        recvcount[my_rank],     // Size
+        MPI_BYTE,               // Type
+        bitmap,                 // Recv Buffer
+        recvcount,              // Recvcount
+        displs,                 // Offsets
+        MPI_BYTE,               // Type
+        0,                      // Root
+        MPI_COMM_WORLD          // Comm
+    );
 
     free(buffer);
 
