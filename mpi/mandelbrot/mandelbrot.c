@@ -199,6 +199,7 @@ int main( int argc, char *argv[] )
     int recvcount[comm_sz], start[comm_sz], end[comm_sz];
 
     MPI_Datatype row_type;
+    // Works if and only if the pixel_t struct is tightly packed. 
     MPI_Type_contiguous(xsize * sizeof(pixel_t), MPI_BYTE, &row_type);
     MPI_Type_commit(&row_type);
 
