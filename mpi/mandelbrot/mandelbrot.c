@@ -196,19 +196,20 @@ int main( int argc, char *argv[] )
     }
 
     xsize = ysize * 1.4;
-    int recvcount[comm_sz], displs[comm_sz];
+    int recvcount[comm_sz], start[comm_sz], end[comm_sz];
+
+    MPI_Datatype row_type;
+    MPI_Type_contiguous(xsize * sizeof(pixel_t), MPI_BYTE, &row_type);
+    MPI_Type_commit(&row_type);
 
     for (int i=0; i<comm_sz; i++) {
-        recvcount[i] = (ysize / comm_sz) + (ysize % comm_sz > i ? 1 : 0);
-        displs[i] = i > 0 ? displs[i-1] + recvcount[i-1] : 0;
-        recvcount[i] = recvcount[i] * xsize * sizeof(pixel_t);
+        start[i] = i * ysize / comm_sz;
+        end[i] = (i+1) * ysize / comm_sz;
+        recvcount[i] = end[i] - start[i];
     } 
 
-    const int lower_bound = displs[my_rank] / sizeof(pixel_t) / xsize;
-    const int upper_bound = (displs[my_rank] + recvcount[my_rank]) / sizeof(pixel_t) / xsize;
-
-    pixel_t* buffer = (pixel_t*)malloc(recvcount[my_rank]); assert(buffer != NULL);
-    draw_lines(lower_bound, upper_bound, buffer, xsize, ysize);
+    pixel_t* buffer = (pixel_t*)malloc(recvcount[my_rank] * xsize * sizeof(pixel_t)); assert(buffer != NULL);
+    draw_lines(start[my_rank], end[my_rank], buffer, xsize, ysize);
 
     if ( 0 == my_rank ){
         bitmap = (pixel_t*)malloc(xsize*ysize*sizeof(*bitmap));
@@ -218,11 +219,11 @@ int main( int argc, char *argv[] )
     MPI_Gatherv(
         buffer,                 // Send buffer
         recvcount[my_rank],     // Size
-        MPI_BYTE,               // Type
+        row_type,               // Type
         bitmap,                 // Recv Buffer
         recvcount,              // Recvcount
-        displs,                 // Offsets
-        MPI_BYTE,               // Type
+        start,                  // Offsets
+        row_type,               // Type
         0,                      // Root
         MPI_COMM_WORLD          // Comm
     );
